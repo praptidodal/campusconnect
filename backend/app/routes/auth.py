@@ -95,3 +95,49 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     Reset user password using the single-use reset token.
     """
     return password_reset_service.reset_password_with_token(payload.reset_token, payload.new_password, db)
+
+
+@router.get("/smtp-diagnostics")
+def smtp_diagnostics():
+    """
+    Diagnostic endpoint to test live SMTP connectivity and verify credentials.
+    """
+    import smtplib
+    from app.services.email_service import get_smtp_config
+    config = get_smtp_config()
+    username = config.get("username", "")
+    password = config.get("password", "")
+    host = config.get("host", "smtp.gmail.com")
+    port = config.get("port", 587)
+
+    diag = {
+        "host": host,
+        "port": port,
+        "has_username": bool(username),
+        "username_masked": f"{username[:3]}...@{username.split('@')[-1]}" if "@" in username else (username[:3] + "..." if username else "NOT SET"),
+        "has_password": bool(password),
+        "password_length": len(password) if password else 0,
+        "from_name": config.get("from_name"),
+        "from_email": config.get("from_email"),
+        "environment": config.get("environment"),
+        "connection_test": "pending"
+    }
+
+    if not username:
+        diag["connection_test"] = "FAILED: SMTP_USERNAME is empty or not configured in environment variables"
+        return diag
+    if not password:
+        diag["connection_test"] = "FAILED: SMTP_PASSWORD is empty or not configured in environment variables"
+        return diag
+
+    try:
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(username, password)
+        diag["connection_test"] = "SUCCESS: Authenticated successfully with Gmail SMTP!"
+    except Exception as e:
+        diag["connection_test"] = f"FAILED: {type(e).__name__} - {str(e)}"
+
+    return diag
