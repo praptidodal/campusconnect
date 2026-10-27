@@ -174,8 +174,10 @@ export default function MessagingDashboard() {
     const token = localStorage.getItem('cc_token');
     if (!token) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${convId}?token=${token}`;
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const host = apiUrl ? new URL(apiUrl).host : window.location.host;
+    const protocol = (apiUrl ? new URL(apiUrl).protocol : window.location.protocol) === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${host}/ws/chat/${convId}?token=${token}`;
 
     console.log(`Connecting to WebSocket: ${wsUrl}`);
     const ws = new WebSocket(wsUrl);

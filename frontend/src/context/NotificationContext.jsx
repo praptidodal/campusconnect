@@ -60,8 +60,10 @@ export const NotificationProvider = ({ children }) => {
       const token = localStorage.getItem('cc_token');
       if (!token || !active) return;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/notifications?token=${token}`;
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const host = apiUrl ? new URL(apiUrl).host : window.location.host;
+      const protocol = (apiUrl ? new URL(apiUrl).protocol : window.location.protocol) === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${host}/ws/notifications?token=${token}`;
       
       ws = new WebSocket(wsUrl);
 
