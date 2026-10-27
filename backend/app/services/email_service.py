@@ -98,6 +98,38 @@ If you did not request a password reset, you can safely ignore this email.
 </html>
 """
 
+    # If Resend HTTP API key is configured, use HTTPS (Port 443)
+    # This bypasses Render free tier's firewall block on SMTP ports (25, 465, 587)
+    resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
+    if resend_api_key:
+        try:
+            import httpx
+            display_name = config.get("from_name") or "CampusConnect"
+            from_sender = os.getenv("RESEND_FROM_EMAIL", f"{display_name} <onboarding@resend.dev>")
+            
+            resp = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": from_sender,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html_content,
+                    "text": text_content,
+                },
+                timeout=10.0,
+            )
+            if resp.status_code in (200, 201):
+                logger.info(f"Password reset email sent successfully via Resend API to {to_email}")
+                return True
+            else:
+                logger.error(f"Resend API error: {resp.status_code} - {resp.text}")
+        except Exception as e:
+            logger.error(f"Failed to send email via Resend API: {e}")
+
     # If SMTP is not configured or in development mode without live credentials
     if not config["username"] or not config["password"]:
         if is_dev:
