@@ -98,8 +98,40 @@ If you did not request a password reset, you can safely ignore this email.
 </html>
 """
 
-    # If Resend HTTP API key is configured, use HTTPS (Port 443)
-    # This bypasses Render free tier's firewall block on SMTP ports (25, 465, 587)
+    # 1. Brevo HTTP REST API (Port 443 - HTTPS)
+    # Sends to ANY recipient in the world without requiring a custom domain!
+    brevo_api_key = os.getenv("BREVO_API_KEY", "").strip()
+    if brevo_api_key:
+        try:
+            import httpx
+            display_name = config.get("from_name") or "CampusConnect"
+            sender_email = config.get("from_email") or config.get("username") or "praptidodal2@gmail.com"
+            resp = httpx.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": brevo_api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                json={
+                    "sender": {"name": display_name, "email": sender_email},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_content,
+                    "textContent": text_content,
+                },
+                timeout=10.0,
+            )
+            if resp.status_code in (200, 201):
+                logger.info(f"Password reset email sent successfully via Brevo API to {to_email}")
+                return True
+            else:
+                logger.error(f"Brevo API error: {resp.status_code} - {resp.text}")
+        except Exception as e:
+            logger.error(f"Failed to send email via Brevo API: {e}")
+
+    # 2. Resend HTTP REST API (Port 443 - HTTPS)
+    # By default with onboarding@resend.dev, sends to account owner's email address
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
     if resend_api_key:
         try:
