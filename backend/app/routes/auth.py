@@ -100,44 +100,55 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 @router.get("/smtp-diagnostics")
 def smtp_diagnostics():
     """
-    Diagnostic endpoint to test live SMTP connectivity and verify credentials.
+    Diagnostic endpoint to test live email connectivity (Brevo / Resend / SMTP).
     """
+    import os
     import smtplib
+    import httpx
     from app.services.email_service import get_smtp_config
+
     config = get_smtp_config()
+    brevo_key = os.getenv("BREVO_API_KEY", "").strip()
+    resend_key = os.getenv("RESEND_API_KEY", "").strip()
     username = config.get("username", "")
     password = config.get("password", "")
-    host = config.get("host", "smtp.gmail.com")
-    port = config.get("port", 587)
 
     diag = {
-        "host": host,
-        "port": port,
-        "has_username": bool(username),
-        "username_masked": f"{username[:3]}...@{username.split('@')[-1]}" if "@" in username else (username[:3] + "..." if username else "NOT SET"),
-        "has_password": bool(password),
-        "password_length": len(password) if password else 0,
-        "from_name": config.get("from_name"),
-        "from_email": config.get("from_email"),
-        "environment": config.get("environment"),
-        "connection_test": "pending"
+        "active_provider": "none",
+        "brevo": {
+            "configured": bool(brevo_key),
+            "key_length": len(brevo_key),
+            "key_prefix": brevo_key[:8] + "..." if brevo_key else "",
+            "test_status": "not_tested",
+        },
+        "resend": {
+            "configured": bool(resend_key),
+            "key_length": len(resend_key),
+        },
+        "smtp": {
+            "has_username": bool(username),
+            "has_password": bool(password),
+        }
     }
 
+    if brevo_key:
+        diag["active_provider"] = "Brevo HTTP REST API"
+        try:
+            r = httpx.get("https://api.brevo.com/v3/account", headers={"api-key": brevo_key}, timeout=8.0)
+            if r.status_code == 200:
+                data = r.json()
+                diag["brevo"]["test_status"] = f"SUCCESS: Valid Brevo API key! Account email: {data.get('email')}"
+            else:
+                diag["brevo"]["test_status"] = f"FAILED: HTTP {r.status_code} - {r.text}"
+        except Exception as e:
+            diag["brevo"]["test_status"] = f"FAILED: {e}"
+        return diag
+
+    if resend_key:
+        diag["active_provider"] = "Resend HTTP REST API"
+        return diag
+
+    diag["active_provider"] = "Gmail SMTP (Will fail on Render Free tier)"
     if not username:
-        diag["connection_test"] = "FAILED: SMTP_USERNAME is empty or not configured in environment variables"
-        return diag
-    if not password:
-        diag["connection_test"] = "FAILED: SMTP_PASSWORD is empty or not configured in environment variables"
-        return diag
-
-    try:
-        with smtplib.SMTP(host, port, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(username, password)
-        diag["connection_test"] = "SUCCESS: Authenticated successfully with Gmail SMTP!"
-    except Exception as e:
-        diag["connection_test"] = f"FAILED: {type(e).__name__} - {str(e)}"
-
+        diag["smtp"]["test_status"] = "SMTP_USERNAME is empty"
     return diag

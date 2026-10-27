@@ -105,7 +105,10 @@ If you did not request a password reset, you can safely ignore this email.
         try:
             import httpx
             display_name = config.get("from_name") or "CampusConnect"
-            sender_email = config.get("from_email") or config.get("username") or "praptidodal2@gmail.com"
+            sender_email = os.getenv("BREVO_FROM_EMAIL") or os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USERNAME") or "praptidodal2@gmail.com"
+            if "campusconnect.edu" in sender_email:
+                sender_email = "praptidodal2@gmail.com"
+
             resp = httpx.post(
                 "https://api.brevo.com/v3/smtp/email",
                 headers={
@@ -127,8 +130,10 @@ If you did not request a password reset, you can safely ignore this email.
                 return True
             else:
                 logger.error(f"Brevo API error: {resp.status_code} - {resp.text}")
+                return False
         except Exception as e:
             logger.error(f"Failed to send email via Brevo API: {e}")
+            return False
 
     # 2. Resend HTTP REST API (Port 443 - HTTPS)
     # By default with onboarding@resend.dev, sends to account owner's email address
