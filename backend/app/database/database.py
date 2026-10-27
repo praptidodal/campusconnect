@@ -14,8 +14,13 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+connect_args = {}
+if "tidbcloud.com" in DB_HOST or os.getenv("DB_SSL", "false").lower() == "true":
+    connect_args["ssl"] = {"ssl_mode": "VERIFY_IDENTITY"}
+
 engine = create_engine(
     DATABASE_URL,
+    connect_args=connect_args,
     pool_pre_ping=True,
     pool_recycle=3600,
     echo=False,
