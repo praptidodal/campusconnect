@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function initials(name = '') {
@@ -25,6 +26,11 @@ export default function AdminLayout({ children, activeTab }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   // Enforce frontend protection: redirect non-admin users immediately
   React.useEffect(() => {
@@ -34,13 +40,45 @@ export default function AdminLayout({ children, activeTab }) {
   }, [user, navigate]);
 
   return (
-    <div className="app-shell" style={{ gridTemplateColumns: '260px 1fr' }}>
+    <div className="app-shell admin-shell">
+      {/* Backdrop overlay for mobile drawer */}
+      {mobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close admin menu"
+        />
+      )}
+
       {/* Admin Sidebar */}
-      <aside className="sidebar" style={{ background: '#1c1b19', borderRight: '2px solid #1c1b19', color: '#fbf8f2' }}>
+      <aside
+        className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}
+        style={{ background: '#1c1b19', borderRight: '2px solid #1c1b19', color: '#fbf8f2' }}
+      >
         {/* Header */}
-        <div className="sidebar-brand" style={{ borderBottom: '1.5px solid #2f2e2a', padding: 'var(--space-3) var(--space-2)' }}>
-          <div className="sidebar-brand-name" style={{ color: 'var(--marigold)', fontSize: '1.3rem' }}>CampusConnect</div>
-          <div className="sidebar-brand-sub" style={{ color: 'var(--ink-faint)', fontSize: '0.65rem' }}>Control Panel</div>
+        <div
+          className="sidebar-brand"
+          style={{
+            borderBottom: '1.5px solid #2f2e2a',
+            padding: 'var(--space-3) var(--space-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div className="sidebar-brand-name" style={{ color: 'var(--marigold)', fontSize: '1.3rem' }}>CampusConnect</div>
+            <div className="sidebar-brand-sub" style={{ color: 'var(--ink-faint)', fontSize: '0.65rem' }}>Control Panel</div>
+          </div>
+          <button
+            type="button"
+            className="sidebar-close-btn mobile-only"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close Admin Menu"
+            style={{ color: '#c8c5bc' }}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Admin user info */}
@@ -68,7 +106,10 @@ export default function AdminLayout({ children, activeTab }) {
               return (
                 <button
                   key={item.key}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    setMobileOpen(false);
+                  }}
                   className={`nav-item ${isActive ? 'active' : ''}`}
                   style={{
                     color: isActive ? 'var(--ink)' : '#c8c5bc',
@@ -136,8 +177,17 @@ export default function AdminLayout({ children, activeTab }) {
       <main className="app-main" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
         {/* Header toolbar */}
         <header className="topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2.5px solid var(--ink)', background: 'var(--paper-raised)', padding: 'var(--space-2) var(--space-3)' }}>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="mobile-menu-btn mobile-only"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open Admin Menu"
+              style={{ color: 'var(--ink)' }}
+            >
+              <Menu size={22} />
+            </button>
+            <h1 style={{ fontSize: '1.15rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <span style={{ background: 'var(--marigold)', border: '1.5px solid var(--ink)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', fontFamily: 'JetBrains Mono', color: 'var(--ink)' }}>
                 ADMIN
               </span>

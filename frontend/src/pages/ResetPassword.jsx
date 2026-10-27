@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { resetPassword } from '../services/authService';
 
 export default function ResetPassword() {
@@ -9,8 +10,9 @@ export default function ResetPassword() {
   const resetToken = location.state?.reset_token || '';
   const email = location.state?.email || '';
 
-  const [form, setForm] = useState({ newPassword: '', confirmPassword: '' });
-  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm]                               = useState({ newPassword: '', confirmPassword: '' });
+  const [showPassword, setShowPassword]               = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -158,52 +160,56 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} noValidate>
           {/* New Password */}
           <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label" htmlFor="new-password" style={{ marginBottom: 0 }}>New Password</label>
+            <label className="form-label" htmlFor="new-password">New Password</label>
+            <div className="password-input-wrapper">
+              <input
+                id="new-password"
+                name="newPassword"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                autoFocus
+                className={`input${errors.newPassword ? ' error' : ''}`}
+                value={form.newPassword}
+                onChange={handleChange}
+              />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  fontSize: '0.78rem',
-                  color: 'var(--ink-soft)',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                }}
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <input
-              id="new-password"
-              name="newPassword"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="At least 8 characters"
-              autoComplete="new-password"
-              autoFocus
-              className={`input${errors.newPassword ? ' error' : ''}`}
-              value={form.newPassword}
-              onChange={handleChange}
-              style={{ marginTop: 6 }}
-            />
             {errors.newPassword && <p className="form-error">{errors.newPassword}</p>}
           </div>
 
           {/* Confirm Password */}
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="confirm-password">Confirm New Password</label>
-            <input
-              id="confirm-password"
-              name="confirmPassword"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Re-enter your new password"
-              autoComplete="new-password"
-              className={`input${errors.confirmPassword ? ' error' : ''}`}
-              value={form.confirmPassword}
-              onChange={handleChange}
-            />
+            <div className="password-input-wrapper">
+              <input
+                id="confirm-password"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Re-enter your new password"
+                autoComplete="new-password"
+                className={`input${errors.confirmPassword ? ' error' : ''}`}
+                value={form.confirmPassword}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowConfirmPassword(prev => !prev)}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                title={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.confirmPassword && <p className="form-error">{errors.confirmPassword}</p>}
           </div>
 

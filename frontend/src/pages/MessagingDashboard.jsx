@@ -477,14 +477,17 @@ export default function MessagingDashboard() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0, background: 'var(--paper)' }}>
           
           {/* Left panel: Conversations list */}
-          <div style={{
-            width: 320,
-            borderRight: '1.5px solid var(--line-strong)',
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'var(--paper-raised)',
-            flexShrink: 0
-          }}>
+          <div
+            className={`chat-sidebar-panel ${activeConversationId ? 'mobile-hidden' : ''}`}
+            style={{
+              width: 320,
+              borderRight: '1.5px solid var(--line-strong)',
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--paper-raised)',
+              flexShrink: 0
+            }}
+          >
             {/* Conversations list header */}
             <div style={{ padding: 'var(--space-3) var(--space-2)', borderBottom: '1px solid var(--line)', background: 'var(--paper)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
@@ -633,7 +636,10 @@ export default function MessagingDashboard() {
           </div>
 
           {/* Right panel: Active Chat window */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--paper)', minWidth: 0 }}>
+          <div
+            className={`chat-main-panel ${!activeConversationId ? 'mobile-hidden' : ''}`}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--paper)', minWidth: 0 }}
+          >
             {activeConversationId && activeDetails ? (
               <>
                 {/* Chat window Header */}
@@ -646,20 +652,31 @@ export default function MessagingDashboard() {
                   background: 'var(--paper-raised)',
                   zIndex: 10
                 }}>
-                  <div>
-                    <span className="eyebrow" style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>
-                      {activeDetails.eyebrow}
-                    </span>
-                    <h2 style={{ fontSize: '1.15rem', fontFamily: 'Fraunces, serif', fontWeight: 700, margin: 0 }}>
-                      {activeConv?.conversation_type === 'direct' ? (
-                        <NameWithVerification
-                          user={activeConv.participants.find((p) => p.user_id !== currentUser?.user_id)}
-                          badgeSize={16}
-                        />
-                      ) : (
-                        activeDetails.title
-                      )}
-                    </h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm mobile-only"
+                      onClick={() => setActiveConversationId(null)}
+                      style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+                      aria-label="Back to conversations list"
+                    >
+                      ← Chats
+                    </button>
+                    <div>
+                      <span className="eyebrow" style={{ color: 'var(--ink-soft)', fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>
+                        {activeDetails.eyebrow}
+                      </span>
+                      <h2 style={{ fontSize: '1.15rem', fontFamily: 'Fraunces, serif', fontWeight: 700, margin: 0 }}>
+                        {activeConv?.conversation_type === 'direct' ? (
+                          <NameWithVerification
+                            user={activeConv.participants.find((p) => p.user_id !== currentUser?.user_id)}
+                            badgeSize={16}
+                          />
+                        ) : (
+                          activeDetails.title
+                        )}
+                      </h2>
+                    </div>
                   </div>
 
                   {/* Message Search form in Header */}

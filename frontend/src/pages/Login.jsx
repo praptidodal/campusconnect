@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,8 +20,9 @@ export default function Login() {
   const location = useLocation();
   const { loginSuccess, isAuthenticated } = useAuth();
 
-  const [form, setForm]         = useState({ email: '', password: '' });
-  const [errors, setErrors]     = useState({});
+  const [form, setForm]                 = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors]             = useState({});
   const [apiError, setApiError] = useState('');
   const [success, setSuccess]   = useState('');
   const [loading, setLoading]   = useState(false);
@@ -116,17 +118,27 @@ export default function Login() {
                 Forgot password?
               </Link>
             </div>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              placeholder="Your password"
-              autoComplete="current-password"
-              className={`input${errors.password ? ' error' : ''}`}
-              value={form.password}
-              onChange={handleChange}
-              style={{ marginTop: 6 }}
-            />
+            <div className="password-input-wrapper" style={{ marginTop: 6 }}>
+              <input
+                id="login-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Your password"
+                autoComplete="current-password"
+                className={`input${errors.password ? ' error' : ''}`}
+                value={form.password}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.password && <p className="form-error">{errors.password}</p>}
           </div>
 

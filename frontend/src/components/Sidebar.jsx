@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import SearchSuggestions from './SearchSuggestions';
 import MessageDropdown from './MessageDropdown';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, Menu, X, Home, Users, Compass, Calendar, MoreHorizontal } from 'lucide-react';
 import {
   getRecentSearches,
   clearRecentSearches,
@@ -35,6 +35,13 @@ export default function Sidebar({ active }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, profilePicture } = useAuth();
+
+  // Mobile navigation drawer state
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   // Search state
   const [searchQuery, setSearchQuery]           = useState('');
@@ -155,10 +162,68 @@ export default function Sidebar({ active }) {
 
   return (
     <>
-      <aside className="sidebar">
+      {/* Mobile Top Header Bar (< 960px) */}
+      <header className="mobile-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open Navigation Menu"
+          >
+            <Menu size={22} />
+          </button>
+          <span
+            className="mobile-brand-title"
+            onClick={() => navigate('/dashboard')}
+            style={{ cursor: 'pointer' }}
+          >
+            CampusConnect
+          </span>
+        </div>
+
+        <div className="mobile-header-actions">
+          <MessageDropdown />
+          <NotificationBell />
+          <button
+            type="button"
+            className="mobile-avatar-btn"
+            onClick={() => navigate('/profile')}
+            title="My Profile"
+          >
+            {profilePicture ? (
+              <img src={profilePicture} alt={user?.name} className="avatar-sm" />
+            ) : (
+              <div className="avatar-sm">{initials(user?.name)}</div>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Backdrop overlay for off-canvas mobile drawer */}
+      {mobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close navigation drawer"
+        />
+      )}
+
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         {/* Brand */}
-        <div className="sidebar-brand" style={{ paddingRight: 'var(--space-2)' }}>
-          <div className="sidebar-brand-name">CampusConnect</div>
+        <div className="sidebar-brand" style={{ paddingRight: 'var(--space-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="sidebar-brand-name">CampusConnect</div>
+            <div className="sidebar-brand-sub">MIT-WPU Campus</div>
+          </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close Navigation Menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Global Search Bar */}
@@ -212,7 +277,12 @@ export default function Sidebar({ active }) {
                   active === item.key ? 'active' : '',
                   item.disabled ? 'disabled' : '',
                 ].filter(Boolean).join(' ')}
-                onClick={() => item.path && navigate(item.path)}
+                onClick={() => {
+                  if (item.path) {
+                    navigate(item.path);
+                    setMobileOpen(false);
+                  }
+                }}
                 title={item.disabled ? 'Coming soon' : undefined}
               >
                 {item.label}
@@ -280,7 +350,10 @@ export default function Sidebar({ active }) {
                   <button
                     key={item.key}
                     className={['nav-item', active === item.key ? 'active' : ''].filter(Boolean).join(' ')}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      navigate(item.path);
+                      setMobileOpen(false);
+                    }}
                     style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center' }}
                   >
                     {iconSvg}
@@ -295,7 +368,10 @@ export default function Sidebar({ active }) {
         {/* User Profile Summary — clickable, navigates to /profile */}
         <div
           className="sidebar-user"
-          onClick={() => navigate('/profile')}
+          onClick={() => {
+            navigate('/profile');
+            setMobileOpen(false);
+          }}
           onMouseEnter={() => setUserCardHovered(true)}
           onMouseLeave={() => setUserCardHovered(false)}
           title="Go to my profile"
@@ -362,21 +438,68 @@ export default function Sidebar({ active }) {
         </div>
       </aside>
 
-      {/* Global Floating Header Actions (Top-Right Corner of Viewport/Screen) */}
+      {/* Global Floating Header Actions (Top-Right Corner of Viewport on Desktop) */}
       {location.pathname !== '/messages' && (
-        <div style={{
-          position: 'fixed',
-          top: 12,
-          right: 24,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          zIndex: 1000,
-        }}>
+        <div
+          className="desktop-floating-actions"
+          style={{
+            position: 'fixed',
+            top: 12,
+            right: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            zIndex: 1000,
+          }}
+        >
           <MessageDropdown />
           <NotificationBell />
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (< 640px) */}
+      <nav className="mobile-bottom-nav">
+        <button
+          type="button"
+          className={`mobile-bottom-item ${active === 'dashboard' ? 'active' : ''}`}
+          onClick={() => navigate('/dashboard')}
+        >
+          <Home size={20} />
+          <span>Home</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-item ${active === 'network' ? 'active' : ''}`}
+          onClick={() => navigate('/network')}
+        >
+          <Users size={20} />
+          <span>Network</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-item ${active === 'communities' ? 'active' : ''}`}
+          onClick={() => navigate('/communities')}
+        >
+          <Compass size={20} />
+          <span>Groups</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-item ${active === 'events' ? 'active' : ''}`}
+          onClick={() => navigate('/events')}
+        >
+          <Calendar size={20} />
+          <span>Events</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-item ${mobileOpen ? 'active' : ''}`}
+          onClick={() => setMobileOpen(prev => !prev)}
+        >
+          <MoreHorizontal size={20} />
+          <span>More</span>
+        </button>
+      </nav>
     </>
   );
 }
