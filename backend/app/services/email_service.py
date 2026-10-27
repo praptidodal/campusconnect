@@ -3,16 +3,20 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import parseaddr, formataddr
 
 logger = logging.getLogger("campusconnect.email")
 
 def get_smtp_config():
+    from_name = os.getenv("SMTP_FROM_NAME", "CampusConnect")
+    from_email = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "no-reply@campusconnect.edu"))
     return {
         "host": os.getenv("SMTP_HOST", "smtp.gmail.com"),
         "port": int(os.getenv("SMTP_PORT", "587")),
         "username": os.getenv("SMTP_USERNAME", ""),
         "password": os.getenv("SMTP_PASSWORD", ""),
-        "from_email": os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "no-reply@campusconnect.edu")),
+        "from_name": from_name,
+        "from_email": from_email,
         "environment": os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")).lower(),
     }
 
@@ -112,7 +116,11 @@ If you did not request a password reset, you can safely ignore this email.
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = config["from_email"]
+        
+        parsed_name, bare_email = parseaddr(config["from_email"])
+        bare_sender = bare_email or config["username"]
+        display_name = config.get("from_name") or parsed_name or "CampusConnect"
+        msg["From"] = formataddr((display_name, bare_sender))
         msg["To"] = to_email
 
         part1 = MIMEText(text_content, "plain")
@@ -125,7 +133,7 @@ If you did not request a password reset, you can safely ignore this email.
             server.starttls()
             server.ehlo()
             server.login(config["username"], config["password"])
-            server.sendmail(config["from_email"], [to_email], msg.as_string())
+            server.sendmail(bare_sender, [to_email], msg.as_string())
 
         logger.info(f"Password reset email sent successfully to {to_email}")
         return True
